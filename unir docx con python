@@ -1,0 +1,155 @@
+#IMPORTO TKINTER
+from tkinter import * #Entorno gráfico
+import tkinter as tk #Entorno gráfico (este en manía mía)
+from docxcompose.composer import Composer #Librería adicional para docx
+from docx import Document #Librería adicional para docx
+import os #modulo del sistema con funciones del SO
+import shutil #Librería que permine copiar, cortar, pegar, etc...
+
+origen = "./Plantillas/" #Directorio desde el cual busca lista los archivos
+destino = "./Temp/" #Directorio donde pretendo que guarde los archivos
+
+#ELIMINAR CONTENIDO DIRECTORIO DESTINO, LIMPIAR RESIDUOS DE OTROS USOS
+def limpiar():    
+    for the_file in os.listdir(destino):
+        file_path = os.path.join(destino, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print(e)
+limpiar()
+
+#CREO VENTANA
+ventana=Tk()
+ventana.geometry("710x375") #Tamaño de la ventana
+ventana.resizable(0,0) #Bloquear maximizar
+ventana.title("Combinar plantillas docx")
+
+#DIRECTORIO DONDE BUSCAR ARCHIVOS WORD
+explorar = os.listdir(origen)
+explorar2 = os.listdir(destino)
+
+#CREO LISTBOX CON SCROLLBAR 1 Y 2 MAS LABELS
+etiqueta_equipos_1=Label(ventana,text="Equipos").place(x=30,y=25) #Label listbox1
+frame1=Frame(ventana)
+scroll=Scrollbar(frame1)
+scroll.pack(side=RIGHT, fill=Y)
+lista_equipos_1=Listbox(frame1, yscrollcommand=scroll.set, width=50)
+lista_equipos_1.place(width=50)
+lista_equipos_1.pack(side=LEFT)
+scroll.config(command=lista_equipos_1.yview)
+frame1.pack()
+frame1.place(x=30,y=50)
+
+etiqueta_equipos_2=Label(ventana,text="Equipos seleccionados").place(x=370,y=25)#label listbox2
+frame2=Frame(ventana)
+scroll=Scrollbar(frame2)
+scroll.pack(side=RIGHT, fill=Y)
+lista_equipos_2=Listbox(frame2, yscrollcommand=scroll.set, width=50)
+lista_equipos_2.place(width=50)
+lista_equipos_2.pack(side=LEFT)
+scroll.config(command=lista_equipos_2.yview)
+frame2.pack()
+frame2.place(x=370,y=50)
+
+#AÑADIR ELEMENTOS DESDE DIRECTORIO A LA LISTA
+for item in explorar:
+    lista_equipos_1.insert(END, item)
+
+for item in explorar2:
+    lista_equipos_2.insert(END, item)
+
+#ELIMINAR CONTENIDO
+def eliminarContenido():
+    for the_file in os.listdir(destino):
+        file_path = os.path.join(destino, the_file)
+    try:
+        if os.path.isfile(file_path):
+            os.unlink(file_path)
+    except Exception as e:
+        print(e)    
+
+#FUNCIONES PARA SUBIR Y BAJAR LA SELECCION
+def subir():
+    try:
+        idxs = lista_equipos_2.curselection()
+        if not idxs:
+            return
+        for pos in idxs:
+            if pos==0:
+                continue
+            text=lista_equipos_2.get(pos)
+            lista_equipos_2.delete(pos)
+            lista_equipos_2.insert(pos-1, text)
+            lista_equipos_2.pop(pos)
+            lista_equipos_2.insert(pos-1, text)
+            lista_equipos_2.select_set(pos-1)
+    except:
+        pass
+
+def bajar():
+    try:
+        idxs = lista_equipos_2.curselection()
+        if not idxs:
+            return
+        for pos in idxs:
+            if pos==-1:
+                continue
+            text=lista_equipos_2.get(pos)
+            lista_equipos_2.delete(pos)
+            lista_equipos_2.insert(pos+1, text)
+            lista_equipos_2.pop(pos)
+            lista_equipos_2.insert(pos+1, text)
+            lista_equipos_2.selection_set(pos + 1)
+    except:
+        pass
+
+#SELECCION Y DESELECCION DE PLANTILLAS DE LA LISTA
+def seleccionar_lista():
+    limpiar()
+    lista_equipos_2.insert(END, lista_equipos_1.get(ANCHOR))
+    
+def ordenar_lista():
+    limpiar()
+
+    for the_file in os.listdir(destino):
+        file_path = os.path.join(destino, the_file)
+    try:
+        if os.path.isfile(file_path):
+            os.unlink(file_path)
+    except Exception as e:
+        print(e)
+
+    print(lista_equipos_2.get(0,END))
+    lista_archivos = lista_equipos_2.get(0,END)
+    print(lista_archivos[0:10])
+    
+    for i in range(50):
+        print(lista_archivos[i])
+        shutil.copy(origen+lista_archivos[i], destino)
+        x = i
+        os.rename(destino+lista_archivos[i], destino + f"00{x}.docx") #Renombrar archivos en orden deseado. f"00{x}.txt" es la manera de renombrar
+
+def crear_proyecto():            
+    master = Document("./Portada/Portada.docx")
+    composer = Composer(master)
+    k=0   
+    for k in range(50):
+        docu = Document("./Temp/"+f"00{k}.docx")
+        composer.append(docu)
+        composer.save("./ProyectoFinal/Proyecto.docx")    
+          
+def deseleccionar_lista():  
+    lista_equipos_2.delete(ANCHOR)
+    limpiar()
+
+#BOTONES
+boton_desplazar=Button(ventana,text="Seleccionar",heigh=2,width=41,command=seleccionar_lista).place(x=35,y=220)
+boton_desplazar=Button(ventana,text="Borrar",heigh=1,width=39,command=deseleccionar_lista).place(x=381,y=265)
+boton_desplazar=Button(ventana,text="Confirmar orden",heigh=1,width=39,command=ordenar_lista).place(x=381,y=295)
+boton_desplazar=Button(ventana,text="Crear proyecto",heigh=1,width=39,command=crear_proyecto).place(x=381,y=325)
+boton_subir=Button(ventana,text="Subir",heigh=2,width=20, command=lambda: subir()).place(x=371,y=220)
+boton_bajar=Button(ventana,text="Bajar",heigh=2,width=20, command=lambda: bajar()).place(x=523,y=220)
+
+ventana.mainloop()
